@@ -9,10 +9,8 @@ import {
   LucideMessageCircle,
   LucideCalendar,
   LucideUser,
-  LucideUpload,
-  LucideInfo,
+  LucideInfo, // 保留這個，用來做提示圖示
   LucideCheckCircle,
-  LucideX,
   LucideClipboardList,
 } from "lucide-react";
 
@@ -53,15 +51,13 @@ const App = () => {
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 表單狀態
+  // 表單狀態 (已移除 photo 欄位)
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     delivery: "7-11", // 預設值
     selectedItems: [],
     birthday: "",
-    photo: null,
-    photoPreview: null,
   });
 
   // --- 身份驗證 ---
@@ -153,17 +149,6 @@ const App = () => {
     }));
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData({
-        ...formData,
-        photo: file,
-        photoPreview: URL.createObjectURL(file),
-      });
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.selectedItems.length === 0) {
@@ -178,10 +163,8 @@ const App = () => {
       .map((id) => services.find((s) => s.id === id).title)
       .join("、");
     
-    // ✅ 這裡加上了提醒文字，如果客人有上傳照片，就會在文字裡特別提醒他
-    const photoReminder = formData.photo ? "\n📸 (您有選擇照片，請記得在此聊天室傳送圖片)" : "";
-
-    const summaryText = `🔮【靈魂畫作新預約】\n--------------------\n姓名：${formData.name}\n電話：${formData.phone}\n項目：${selectedTitles}\n取件：${formData.delivery}\n生日：${formData.birthday}\n--------------------\n已於預約系統提交資料，再請確認。${photoReminder}`;
+    // ✅ 在預約單最後加上文字提醒
+    const summaryText = `🔮【靈魂畫作新預約】\n--------------------\n姓名：${formData.name}\n電話：${formData.phone}\n項目：${selectedTitles}\n取件：${formData.delivery}\n生日：${formData.birthday}\n--------------------\n已於預約系統提交資料，再請確認。\n\n⚠️ 提醒：若您預約的項目需要參考照片（如靈魂畫），請直接在此聊天室傳送您的近照即可。`;
 
     // 2. 標準 oaMessage 格式
     window.location.href = `https://line.me/R/oaMessage/${SITE_CONFIG.lineId}/?${encodeURIComponent(summaryText)}`;
@@ -297,44 +280,13 @@ const App = () => {
             </div>
           </div>
 
-          <div className="relative group border-2 border-dashed border-amber-200 rounded-xl p-4 text-center cursor-pointer hover:bg-amber-50">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            />
-            {formData.photoPreview ? (
-              <div className="relative h-32">
-                <img
-                  src={formData.photoPreview}
-                  className="h-full mx-auto object-contain"
-                  alt="Preview"
-                />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setFormData({
-                      ...formData,
-                      photo: null,
-                      photoPreview: null,
-                    });
-                  }}
-                  className="absolute top-0 right-0 bg-white rounded-full p-1 shadow"
-                >
-                  <LucideX size={14} />
-                </button>
-              </div>
-            ) : (
-              <div className="text-gray-400 text-xs">
-                <LucideUpload
-                  className="mx-auto mb-2 text-amber-300"
-                  size={24}
-                />
-                上傳近照 (選填)
-              </div>
-            )}
+          {/* ✅ 這裡改成了文字提示區塊，取代原本的上傳按鈕 */}
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+             <LucideInfo className="text-amber-500 shrink-0 mt-0.5" size={20} />
+             <p className="text-sm text-[#5C544E] leading-relaxed">
+               <strong>需要提供照片嗎？</strong><br/>
+               部分服務（如靈魂畫）需參考您的近照。請於送出預約單後，直接在 LINE 聊天室傳送照片給畫家即可。
+             </p>
           </div>
 
           <button
