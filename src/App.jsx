@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { initializeApp } from "firebase/app";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
-// 移除資料庫相關的 import，讓程式更輕量
+// 移除資料庫引用，讓程式更輕量
 // import { getFirestore, collection, addDoc } from "firebase/firestore";
 import {
   LucideStar,
@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 // ------------------------------------------------------------------
-// ✅ Firebase 設定 (雖然不用資料庫，但保留 Auth 以維持 App 初始化正常)
+// ✅ Firebase 設定
 // ------------------------------------------------------------------
 const firebaseConfig = {
   apiKey: "AIzaSyAAkmXywpBahOqJec0xzwlCpBuKLk8PcHU",
@@ -40,8 +40,9 @@ const SITE_CONFIG = {
   aboutLogo: "https://i.postimg.cc/0QfFJRJj/S_39927814.jpg",
   personalPhoto1: "https://i.postimg.cc/zDTS7Sdn/S_39927817.jpg",
   personalPhoto2: "https://i.postimg.cc/qB2XwXmG/S_39927818.jpg",
+  // 官方連結
   lineUrl: "https://line.me/R/ti/p/@445covnm",
-  lineId: "@445covnm",
+  lineId: "@445covnm", // 請確認有包含 @ 符號
   igUrl: "https://www.instagram.com/crystal_5777",
 };
 
@@ -56,14 +57,14 @@ const App = () => {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
-    delivery: "7-11",
+    delivery: "7-11", // 預設值
     selectedItems: [],
     birthday: "",
     photo: null,
     photoPreview: null,
   });
 
-  // --- 身份驗證 (維持基本的匿名登入，避免報錯) ---
+  // --- 身份驗證 ---
   useEffect(() => {
     signInAnonymously(auth).catch((err) => console.error("Auth failed", err));
     return onAuthStateChanged(auth, setUser);
@@ -163,6 +164,7 @@ const App = () => {
     }
   };
 
+  // ✅ 這是修正後最穩定的提交邏輯
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.selectedItems.length === 0) {
@@ -171,27 +173,29 @@ const App = () => {
     }
 
     setIsSubmitting(true);
-    try {
-      // ⚠️ 這裡已經移除資料庫寫入程式碼
-      // 直接執行 LINE 跳轉邏輯
+
+    // 1. 準備預約文字
+    const selectedTitles = formData.selectedItems
+      .map((id) => services.find((s) => s.id === id).title)
+      .join("、");
       
-      const selectedTitles = formData.selectedItems
-        .map((id) => services.find((s) => s.id === id).title)
-        .join("、");
-        
-      const summaryText = `🔮【靈魂畫作新預約】\n--------------------\n姓名：${formData.name}\n電話：${formData.phone}\n項目：${selectedTitles}\n取件：${formData.delivery}\n生日：${formData.birthday}\n--------------------\n已於預約系統提交資料，再請確認。`;
+    const summaryText = `🔮【靈魂畫作新預約】\n--------------------\n姓名：${formData.name}\n電話：${formData.phone}\n項目：${selectedTitles}\n取件：${formData.delivery}\n生日：${formData.birthday}\n--------------------\n已於預約系統提交資料，再請確認。`;
 
-      // 跳轉至 LINE (無斜線版本)
-      window.location.href = `https://line.me/R/oaMessage/${
-        SITE_CONFIG.lineId
-      }?${encodeURIComponent(summaryText)}`;
-
+    try {
+      // 2. 嘗試自動複製文字
+      await navigator.clipboard.writeText(summaryText);
+      alert("✅ 預約資料已複製！\n\n請在接下來打開的 LINE 聊天室中\n直接「長按貼上」並發送即可。");
     } catch (err) {
+      // 如果手機不支援自動複製，提醒手動輸入
       console.error(err);
-      alert(`發生錯誤: ${err.message}`);
-    } finally {
-      setIsSubmitting(false);
+      alert("即將跳轉至 LINE，請手動輸入預約資料。");
     }
+
+    // 3. 使用最穩定的加好友/聊天連結 (ti/p)
+    // 這保證能打開聊天室，不會顯示找不到用戶
+    window.location.href = `https://line.me/R/ti/p/${SITE_CONFIG.lineId}`;
+
+    setIsSubmitting(false);
   };
 
   // --- 畫面渲染區域 ---
@@ -284,7 +288,6 @@ const App = () => {
               <option value="Home">宅配</option>
             </select>
 
-            {/* ✅ 修改重點：加上生日標示的容器 */}
             <div className="relative">
               <label className="block text-xs font-semibold text-[#8C847E] ml-1 mb-1">
                 生日 / Birthday
