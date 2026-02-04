@@ -192,10 +192,11 @@ const App = () => {
         .join("、");
       const summaryText = `🔮【靈魂畫作新預約】\n--------------------\n姓名：${formData.name}\n電話：${formData.phone}\n項目：${selectedTitles}\n取件：${formData.delivery}\n生日：${formData.birthday}\n--------------------\n已於預約系統提交資料，再請確認。`;
 
-      // 使用 window.location.href 進行跳轉
+      // ✅ 修正：移除 oaMessage 後面的斜線，這對某些手機版本很重要
       window.location.href = `https://line.me/R/oaMessage/${
         SITE_CONFIG.lineId
-      }/?${encodeURIComponent(summaryText)}`;
+      }?${encodeURIComponent(summaryText)}`;
+
     } catch (err) {
       console.error(err);
       alert(`系統錯誤 (請確認 Firebase 規則或截圖給畫家): ${err.message}`);
@@ -281,7 +282,6 @@ const App = () => {
               }
               className="w-full px-4 py-3 rounded-xl bg-gray-50 border-gray-200 outline-none focus:ring-2 focus:ring-amber-200"
             />
-            {/* ✅ 這裡已經修改：全家、宅配 */}
             <select
               value={formData.delivery}
               onChange={(e) =>
