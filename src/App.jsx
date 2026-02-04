@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { initializeApp } from "firebase/app";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
-// 移除資料庫引用，讓程式更輕量
+// 移除資料庫引用
 // import { getFirestore, collection, addDoc } from "firebase/firestore";
 import {
   LucideStar,
@@ -42,7 +42,7 @@ const SITE_CONFIG = {
   personalPhoto2: "https://i.postimg.cc/qB2XwXmG/S_39927818.jpg",
   // 官方連結
   lineUrl: "https://line.me/R/ti/p/@445covnm",
-  lineId: "@445covnm", // 請確認有包含 @ 符號
+  lineId: "@445covnm", 
   igUrl: "https://www.instagram.com/crystal_5777",
 };
 
@@ -164,7 +164,6 @@ const App = () => {
     }
   };
 
-  // ✅ 這是修正後最穩定的提交邏輯
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.selectedItems.length === 0) {
@@ -174,28 +173,22 @@ const App = () => {
 
     setIsSubmitting(true);
 
-    // 1. 準備預約文字
+    // 1. 產生預約文字
     const selectedTitles = formData.selectedItems
       .map((id) => services.find((s) => s.id === id).title)
       .join("、");
-      
-    const summaryText = `🔮【靈魂畫作新預約】\n--------------------\n姓名：${formData.name}\n電話：${formData.phone}\n項目：${selectedTitles}\n取件：${formData.delivery}\n生日：${formData.birthday}\n--------------------\n已於預約系統提交資料，再請確認。`;
+    
+    // ✅ 這裡加上了提醒文字，如果客人有上傳照片，就會在文字裡特別提醒他
+    const photoReminder = formData.photo ? "\n📸 (您有選擇照片，請記得在此聊天室傳送圖片)" : "";
 
-    try {
-      // 2. 嘗試自動複製文字
-      await navigator.clipboard.writeText(summaryText);
-      alert("✅ 預約資料已複製！\n\n請在接下來打開的 LINE 聊天室中\n直接「長按貼上」並發送即可。");
-    } catch (err) {
-      // 如果手機不支援自動複製，提醒手動輸入
-      console.error(err);
-      alert("即將跳轉至 LINE，請手動輸入預約資料。");
-    }
+    const summaryText = `🔮【靈魂畫作新預約】\n--------------------\n姓名：${formData.name}\n電話：${formData.phone}\n項目：${selectedTitles}\n取件：${formData.delivery}\n生日：${formData.birthday}\n--------------------\n已於預約系統提交資料，再請確認。${photoReminder}`;
 
-    // 3. 使用最穩定的加好友/聊天連結 (ti/p)
-    // 這保證能打開聊天室，不會顯示找不到用戶
-    window.location.href = `https://line.me/R/ti/p/${SITE_CONFIG.lineId}`;
-
-    setIsSubmitting(false);
+    // 2. 標準 oaMessage 格式
+    window.location.href = `https://line.me/R/oaMessage/${SITE_CONFIG.lineId}/?${encodeURIComponent(summaryText)}`;
+    
+    setTimeout(() => {
+        setIsSubmitting(false);
+    }, 2000);
   };
 
   // --- 畫面渲染區域 ---
@@ -349,7 +342,7 @@ const App = () => {
             disabled={isSubmitting}
             className="w-full bg-[#5C544E] text-white py-4 rounded-xl font-medium hover:bg-[#4A433E] disabled:opacity-50"
           >
-            {isSubmitting ? "跳轉至 LINE 發送預約" : "跳轉至 LINE 發送預約"}
+            {isSubmitting ? "傳送預約至 LINE" : "傳送預約至 LINE"}
           </button>
         </form>
       </div>
