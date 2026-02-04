@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { initializeApp } from "firebase/app";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
-import { getFirestore, collection, addDoc } from "firebase/firestore";
+// 移除資料庫相關的 import，讓程式更輕量
+// import { getFirestore, collection, addDoc } from "firebase/firestore";
 import {
   LucideStar,
   LucideInstagram,
@@ -16,7 +17,7 @@ import {
 } from "lucide-react";
 
 // ------------------------------------------------------------------
-// ✅ 已填入您的正確 Firebase 設定
+// ✅ Firebase 設定 (雖然不用資料庫，但保留 Auth 以維持 App 初始化正常)
 // ------------------------------------------------------------------
 const firebaseConfig = {
   apiKey: "AIzaSyAAkmXywpBahOqJec0xzwlCpBuKLk8PcHU",
@@ -31,7 +32,7 @@ const firebaseConfig = {
 // 初始化 Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+// const db = getFirestore(app); // 不使用資料庫
 const appId = "chloe-reservation-system";
 
 // --- 🔧 圖片與視覺設定區 ---
@@ -55,14 +56,14 @@ const App = () => {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
-    delivery: "7-11", // 預設值
+    delivery: "7-11",
     selectedItems: [],
     birthday: "",
     photo: null,
     photoPreview: null,
   });
 
-  // --- 身份驗證 ---
+  // --- 身份驗證 (維持基本的匿名登入，避免報錯) ---
   useEffect(() => {
     signInAnonymously(auth).catch((err) => console.error("Auth failed", err));
     return onAuthStateChanged(auth, setUser);
@@ -171,35 +172,23 @@ const App = () => {
 
     setIsSubmitting(true);
     try {
-      // 1. 寫入資料庫
-      await addDoc(
-        collection(db, "artifacts", appId, "public", "data", "reservations"),
-        {
-          name: formData.name,
-          phone: formData.phone,
-          delivery: formData.delivery,
-          selectedServices: formData.selectedItems.map(
-            (id) => services.find((s) => s.id === id).title
-          ),
-          birthday: formData.birthday,
-          createdAt: new Date().toISOString(),
-        }
-      );
-
-      // 2. LINE 跳轉
+      // ⚠️ 這裡已經移除資料庫寫入程式碼
+      // 直接執行 LINE 跳轉邏輯
+      
       const selectedTitles = formData.selectedItems
         .map((id) => services.find((s) => s.id === id).title)
         .join("、");
+        
       const summaryText = `🔮【靈魂畫作新預約】\n--------------------\n姓名：${formData.name}\n電話：${formData.phone}\n項目：${selectedTitles}\n取件：${formData.delivery}\n生日：${formData.birthday}\n--------------------\n已於預約系統提交資料，再請確認。`;
 
-      // ✅ 修正：移除 oaMessage 後面的斜線，這對某些手機版本很重要
+      // 跳轉至 LINE (無斜線版本)
       window.location.href = `https://line.me/R/oaMessage/${
         SITE_CONFIG.lineId
       }?${encodeURIComponent(summaryText)}`;
 
     } catch (err) {
       console.error(err);
-      alert(`系統錯誤 (請確認 Firebase 規則或截圖給畫家): ${err.message}`);
+      alert(`發生錯誤: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -282,6 +271,7 @@ const App = () => {
               }
               className="w-full px-4 py-3 rounded-xl bg-gray-50 border-gray-200 outline-none focus:ring-2 focus:ring-amber-200"
             />
+            
             <select
               value={formData.delivery}
               onChange={(e) =>
@@ -293,15 +283,22 @@ const App = () => {
               <option value="Family">全家店到店</option>
               <option value="Home">宅配</option>
             </select>
-            <input
-              required
-              type="date"
-              value={formData.birthday}
-              onChange={(e) =>
-                setFormData({ ...formData, birthday: e.target.value })
-              }
-              className="w-full px-4 py-3 rounded-xl bg-gray-50 border-gray-200 outline-none text-gray-500"
-            />
+
+            {/* ✅ 修改重點：加上生日標示的容器 */}
+            <div className="relative">
+              <label className="block text-xs font-semibold text-[#8C847E] ml-1 mb-1">
+                生日 / Birthday
+              </label>
+              <input
+                required
+                type="date"
+                value={formData.birthday}
+                onChange={(e) =>
+                  setFormData({ ...formData, birthday: e.target.value })
+                }
+                className="w-full px-4 py-3 rounded-xl bg-gray-50 border-gray-200 outline-none text-gray-500 focus:ring-2 focus:ring-amber-200"
+              />
+            </div>
           </div>
 
           <div className="relative group border-2 border-dashed border-amber-200 rounded-xl p-4 text-center cursor-pointer hover:bg-amber-50">
@@ -349,7 +346,7 @@ const App = () => {
             disabled={isSubmitting}
             className="w-full bg-[#5C544E] text-white py-4 rounded-xl font-medium hover:bg-[#4A433E] disabled:opacity-50"
           >
-            {isSubmitting ? "傳送資料中..." : "預約並傳送至 LINE"}
+            {isSubmitting ? "跳轉至 LINE 發送預約" : "跳轉至 LINE 發送預約"}
           </button>
         </form>
       </div>
