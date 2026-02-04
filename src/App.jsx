@@ -39,7 +39,6 @@ const SITE_CONFIG = {
   aboutLogo: "https://i.postimg.cc/0QfFJRJj/S_39927814.jpg",
   personalPhoto1: "https://i.postimg.cc/zDTS7Sdn/S_39927817.jpg",
   personalPhoto2: "https://i.postimg.cc/qB2XwXmG/S_39927818.jpg",
-  // ⚠️ 請確認下方 ID 是否正確，否則無法跳轉
   lineUrl: "https://line.me/R/ti/p/@445covnm",
   lineId: "@445covnm",
   igUrl: "https://www.instagram.com/crystal_5777",
@@ -56,7 +55,7 @@ const App = () => {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
-    delivery: "7-11",
+    delivery: "7-11", // 預設值
     selectedItems: [],
     birthday: "",
     photo: null,
@@ -65,7 +64,6 @@ const App = () => {
 
   // --- 身份驗證 ---
   useEffect(() => {
-    // 嘗試匿名登入，讓使用者可以寫入資料庫
     signInAnonymously(auth).catch((err) => console.error("Auth failed", err));
     return onAuthStateChanged(auth, setUser);
   }, []);
@@ -200,7 +198,6 @@ const App = () => {
       }/?${encodeURIComponent(summaryText)}`;
     } catch (err) {
       console.error(err);
-      // 如果權限錯誤，通常是 Firestore 規則沒開，但這邊先提示一般錯誤
       alert(`系統錯誤 (請確認 Firebase 規則或截圖給畫家): ${err.message}`);
     } finally {
       setIsSubmitting(false);
@@ -249,7 +246,7 @@ const App = () => {
                       setSelectedService(item);
                       setShowServiceModal(true);
                     }}
-                    className="text-gray-400 hover:text-amber-500"
+                    className="p-1 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-full transition-colors"
                   >
                     <LucideInfo size={16} />
                   </button>
@@ -284,6 +281,7 @@ const App = () => {
               }
               className="w-full px-4 py-3 rounded-xl bg-gray-50 border-gray-200 outline-none focus:ring-2 focus:ring-amber-200"
             />
+            {/* ✅ 這裡已經修改：全家、宅配 */}
             <select
               value={formData.delivery}
               onChange={(e) =>
@@ -292,8 +290,8 @@ const App = () => {
               className="w-full px-4 py-3 rounded-xl bg-gray-50 border-gray-200 outline-none"
             >
               <option value="7-11">7-11 店到店</option>
-              <option value="Mail">郵寄宅配</option>
-              <option value="F2F">面交 (台南)</option>
+              <option value="Family">全家店到店</option>
+              <option value="Home">宅配</option>
             </select>
             <input
               required
